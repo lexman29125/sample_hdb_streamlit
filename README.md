@@ -1,78 +1,86 @@
-# Codebook / Data Dictionary:
+# HDB Resale Price & Family Housing Explorer 🏠
 
-- resale_price: the property's sale price in Singapore dollars. This is the target variable that you're trying to predict for this challenge.
-- Tranc_YearMonth: year and month of the resale transaction, e.g. 2015-02
-- town: HDB township where the flat is located, e.g. BUKIT MERAH
-- flat_type: type of the resale flat unit, e.g. 3 ROOM
-- block: block number of the resale flat, e.g. 454
-- street_name: street name where the resale flat resides, e.g. TAMPINES ST 42
-- storey_range: floor level (range) of the resale flat unit, e.g. 07 TO 09
-- floor_area_sqm: floor area of the resale flat unit in square metres
-- flat_model: HDB model of the resale flat, e.g. Multi Generation
-- lease_commence_date: commencement year of the flat unit's 99-year lease
-- Tranc_Year: year of resale transaction
-- Tranc_Month: month of resale transaction
-- mid_storey: median value of storey_range
-- lower: lower value of storey_range
-- upper: upper value of storey_range
-- mid: middle value of storey_range
-- full_flat_type: combination of flat_type and flat_model
-- address: combination of block and street_name
-- floor_area_sqft: floor area of the resale flat unit in square feet
-- hdb_age: number of years from lease_commence_date to present year
-- max_floor_lvl: highest floor of the resale flat
-- year_completed: year which construction was completed for resale flat
-- residential: boolean value if resale flat has residential units in the same block
-- commercial: boolean value if resale flat has commercial units in the same block
-- market_hawker: boolean value if resale flat has a market or hawker centre in the same block
-- multistorey_carpark: boolean value if resale flat has a multistorey carpark in the same block
-- precinct_pavilion: boolean value if resale flat has a pavilion in the same block
-- total_dwelling_units: total number of residential dwelling units in the resale flat
-- 1room_sold: number of 1-room residential units in the resale flat
-- 2room_sold: number of 2-room residential units in the resale flat
-- 3room_sold: number of 3-room residential units in the resale flat
-- 4room_sold: number of 4-room residential units in the resale flat
-- 5room_sold: number of 5-room residential units in the resale flat
-- exec_sold: number of executive type residential units in the resale flat block
-- multigen_sold: number of multi-generational type residential units in the resale flat block
-- studio_apartment_sold: number of studio apartment type residential units in the resale flat block
-- 1room_rental: number of 1-room rental residential units in the resale flat block
-- 2room_rental: number of 2-room rental residential units in the resale flat block
-- 3room_rental: number of 3-room rental residential units in the resale flat block
-- other_room_rental: number of "other" type rental residential units in the resale flat block
-- postal: postal code of the resale flat block
-- Latitude: Latitude based on postal code
-- Longitude: Longitude based on postal code
-- planning_area: Government planning area that the flat is located
-- Mall_Nearest_Distance: distance (in metres) to the nearest mall
-- Mall_Within_500m: number of malls within 500 metres
-- Mall_Within_1km: number of malls within 1 kilometre
-- Mall_Within_2km: number of malls within 2 kilometres
-- Hawker_Nearest_Distance: distance (in metres) to the nearest hawker centre
-- Hawker_Within_500m: number of hawker centres within 500 metres
-- Hawker_Within_1km: number of hawker centres within 1 kilometre
-- Hawker_Within_2km: number of hawker centres within 2 kilometres
-- hawker_food_stalls: number of hawker food stalls in the nearest hawker centre
-- hawker_market_stalls: number of hawker and market stalls in the nearest hawker centre
-- mrt_nearest_distance: distance (in metres) to the nearest MRT station
-- mrt_name: name of the nearest MRT station
-- bus_interchange: boolean value if the nearest MRT station is also a bus interchange
-- mrt_interchange: boolean value if the nearest MRT station is a train interchange station
-- mrt_latitude: latitude (in decimal degrees) of the the nearest MRT station
-- mrt_longitude: longitude (in decimal degrees) of the nearest MRT station
-- bus_stop_nearest_distance: distance (in metres) to the nearest bus stop
-- bus_stop_name: name of the nearest bus stop
-- bus_stop_latitude: latitude (in decimal degrees) of the the nearest bus stop
-- bus_stop_longitude: longitude (in decimal degrees) of the nearest bus stop
-- pri_sch_nearest_distance: distance (in metres) to the nearest primary school
-- pri_sch_name: name of the nearest primary school
-- vacancy: number of vacancies in the nearest primary school
-- pri_sch_affiliation: boolean value if the nearest primary school has a secondary school affiliation
-- pri_sch_latitude: latitude (in decimal degrees) of the the nearest primary school
-- pri_sch_longitude: longitude (in decimal degrees) of the nearest primary school
-- sec_sch_nearest_dist: distance (in metres) to the nearest secondary school
-- sec_sch_name: name of the nearest secondary school
-- cutoff_point: PSLE cutoff point of the nearest secondary school
-- affiliation: boolean value if the nearest secondary school has an primary school affiliation
-- sec_sch_latitude: latitude (in decimal degrees) of the the nearest secondary school
-- sec_sch_longitude: longitude (in decimal degrees) of the nearest secondary school
+A comprehensive data analysis and visualization project for Singapore HDB (Housing & Development Board) resale prices, with a special focus on family-friendly housing considerations for families with young children.
+
+## 📖 My Workflow in creating this streamlit app
+
+This repository demonstrates a modern AI-assisted development workflow using **VS Code with GitHub Copilot (Agent Mode, Claude Sonnet 4)** to rapidly prototype and build a comprehensive Streamlit application. The quality of the generated code is significantly influenced by the LLM capabilities and prompt engineering.
+
+### 🔄 Development Process
+
+**1. Requirement Gathering (`notes.md`)**
+
+- Write a brief problem statement and research questions
+- Use AI to refine the requirements
+
+**2. Code Generation (`notes.md` + `Data_Dictionary.md`)**
+
+- This is my brief prompt to kick off the code generation:
+  > "Based on notes.md and Data_Dictionary.md, generate a streamlit app that allows the user to explore the dataset."
+
+## 🛠️ Setup & Installation
+
+### Prerequisites
+
+- Python 3.10+ (recommended)
+- pip or conda package manager
+
+### Installation Steps
+
+1. **Clone or download this repository**
+
+   ```bash
+   git clone https://github.com/zey-2/sample_hdb.git
+   cd sample_hdb
+   ```
+
+2. **Create a virtual environment (recommended)**
+
+   ```bash
+   # Using conda
+   conda create -n hdb_analysis python=3.10
+   conda activate hdb_analysis
+   ```
+
+3. **Install required packages**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Required Dependencies
+
+- `streamlit>=1.28.0` - Web application framework
+- `pandas>=1.5.0` - Data manipulation and analysis
+- `numpy>=1.21.0` - Numerical computing
+- `plotly>=5.10.0` - Interactive visualizations
+- `seaborn>=0.11.0` - Statistical data visualization
+- `matplotlib>=3.5.0` - Plotting library
+- `openpyxl>=3.0.0` - Excel file support
+
+## 🚀 Quick Start
+
+### Running the Streamlit App
+
+```bash
+streamlit run streamlit_app.py
+```
+
+The app will automatically open in your default browser at `http://localhost:8501`
+
+## 📁 Project Structure
+
+```
+sample_hdb/
+├── README.md                 # This file
+├── Data_Dictionary.md        # Complete feature descriptions (Renamed from README.md)
+├── instruction.md           # EDA guidelines and methodology (Not used to vibe-code this app)
+├── notes.md                 # Problem statement and research questions
+├── requirements.txt         # Python dependencies
+├── run_app.bat             # Windows batch file to run Streamlit
+├── STREAMLIT_README.md     # Streamlit app specific documentation
+├── streamlit_app.py        # Main Streamlit application
+├── streamlit_app_clean.py  # Clean version of Streamlit app
+└── datasets/
+    ├── train.csv           # Training dataset for analysis
+    └── test.csv            # Test dataset
+```

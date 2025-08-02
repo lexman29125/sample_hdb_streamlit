@@ -8,6 +8,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from datetime import datetime
 import warnings
+from io import BytesIO
 warnings.filterwarnings('ignore')
 
 # Page configuration
@@ -57,29 +58,184 @@ def load_data():
         return df
     except Exception as e:
         st.error(f"Error loading dataset: {e}")
-        # Create a sample dataset for demonstration if file is too large
-        st.warning("Loading sample data for demonstration...")
-        return create_sample_data()
+        st.error("Please ensure the 'train.csv' file is available in the 'datasets/' directory.")
+        st.stop()  # Stop execution if dataset cannot be loaded
 
-def create_sample_data():
-    """Create sample data if the main dataset cannot be loaded"""
-    np.random.seed(42)
-    n_samples = 1000
+def create_excel_export(df):
+    """Create Excel file for export"""
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Main filtered data
+        df.to_excel(writer, sheet_name='Filtered_Properties', index=False)
+        
+        # Summary statistics
+        if 'resale_price' in df.columns:
+            summary_stats = df.describe()
+            summary_stats.to_excel(writer, sheet_name='Summary_Statistics')
+        
+        # Town summary
+        if 'town' in df.columns and 'resale_price' in df.columns:
+            town_summary = df.groupby('town').agg({
+                'resale_price': ['count', 'mean', 'median'],
+                'floor_area_sqm': 'mean' if 'floor_area_sqm' in df.columns else lambda x: None
+            }).round(2)
+            town_summary.columns = ['Count', 'Avg_Price', 'Median_Price', 'Avg_Floor_Area']
+            town_summary.to_excel(writer, sheet_name='Town_Summary')
     
-    sample_data = {
-        'resale_price': np.random.normal(400000, 150000, n_samples),
-        'town': np.random.choice(['TAMPINES', 'BEDOK', 'JURONG WEST', 'WOODLANDS', 'PUNGGOL'], n_samples),
-        'flat_type': np.random.choice(['3 ROOM', '4 ROOM', '5 ROOM', 'EXECUTIVE'], n_samples),
-        'floor_area_sqm': np.random.normal(85, 20, n_samples),
-        'pri_sch_nearest_distance': np.random.exponential(500, n_samples),
-        'mrt_nearest_distance': np.random.exponential(800, n_samples),
-        'Mall_Nearest_Distance': np.random.exponential(1000, n_samples),
-        'Hawker_Nearest_Distance': np.random.exponential(300, n_samples),
-        'hdb_age': np.random.randint(1, 40, n_samples),
-        'Tranc_Year': np.random.choice(range(2015, 2023), n_samples),
-    }
+    output.seek(0)
+    return output.getvalue()
+
+def show_filtered_results(df):
+    """Display filtered results table with export functionality"""
+    st.markdown('<h2 class="sub-header">📋 Filtered Results</h2>', unsafe_allow_html=True)
     
-    return pd.DataFrame(sample_data)
+    # Display filter summary
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Filtered Properties", f"{len(df):,}")
+    with col2:
+        if 'resale_price' in df.columns:
+            avg_price = df['resale_price'].mean()
+            st.metric("Average Price", f"${avg_price:,.0f}")
+    with col3:
+        if 'town' in df.columns:
+            unique_towns = df['town'].nunique()
+            st.metric("Towns Represented", f"{unique_towns}")
+    
+    # Column selection for display
+    available_columns = df.columns.tolist()
+    
+    # Default columns to display (prioritize family-relevant ones)
+    default_columns = []
+    priority_columns = ['town', 'flat_type', 'resale_price', 'floor_area_sqm', 
+                       'pri_sch_nearest_distance', 'mrt_nearest_distance', 
+                       'Mall_Nearest_Distance', 'Hawker_Nearest_Distance', 'hdb_age']
+    
+    for col in priority_columns:
+        if col in available_columns:
+            default_columns.append(col)
+    
+    # Add remaining columns
+    for col in available_columns:
+        if col not in default_columns:
+            default_columns.append(col)
+    
+    selected_columns = st.multiselect(
+        "Select columns to display:",
+        options=available_columns,
+        default=default_columns[:8],  # Show first 8 columns by default
+        help="Choose which columns to display in the results table"
+    )
+    
+    if not selected_columns:
+        st.warning("Please select at least one column to display.")
+        return
+    
+    # Sort options
+    col1, col2 = st.columns(2)
+    with col1:
+        sort_column = st.selectbox(
+            "Sort by:",
+            options=[col for col in selected_columns if col in df.columns],
+            index=0 if selected_columns else 0
+        )
+    
+    with col2:
+        sort_order = st.selectbox(
+            "Sort order:",
+            options=["Ascending", "Descending"],
+            index=1 if sort_column == 'resale_price' else 0
+        )
+    
+    # Apply sorting
+    if sort_column in df.columns:
+        ascending = sort_order == "Ascending"
+        df_display = df[selected_columns].sort_values(by=sort_column, ascending=ascending)
+    else:
+        df_display = df[selected_columns]
+    
+    # Display options
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        show_all = st.checkbox("Show all rows", value=False)
+    with col2:
+        if not show_all:
+            max_rows = st.number_input("Number of rows to display:", min_value=10, max_value=1000, value=100, step=10)
+        else:
+            max_rows = len(df_display)
+    with col3:
+        # Export functionality
+        excel_data = create_excel_export(df)
+        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"HDB_Properties_Filtered_{current_time}.xlsx"
+        
+        st.download_button(
+            label="📥 Export to Excel",
+            data=excel_data,
+            file_name=filename,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            help="Download filtered results as Excel file with multiple sheets"
+        )
+    
+    # Display the table
+    if not show_all and len(df_display) > max_rows:
+        st.info(f"Showing top {max_rows} rows out of {len(df_display)} total rows. Check 'Show all rows' to see everything.")
+        df_to_show = df_display.head(max_rows)
+    else:
+        df_to_show = df_display
+    
+    # Format numeric columns for better display
+    df_formatted = df_to_show.copy()
+    
+    # Format price columns
+    price_columns = [col for col in df_formatted.columns if 'price' in col.lower()]
+    for col in price_columns:
+        if df_formatted[col].dtype in ['int64', 'float64']:
+            df_formatted[col] = df_formatted[col].apply(lambda x: f"${x:,.0f}" if pd.notna(x) else "")
+    
+    # Format distance columns
+    distance_columns = [col for col in df_formatted.columns if 'distance' in col.lower()]
+    for col in distance_columns:
+        if df_formatted[col].dtype in ['int64', 'float64']:
+            df_formatted[col] = df_formatted[col].apply(lambda x: f"{x:.0f}m" if pd.notna(x) else "")
+    
+    # Format area columns
+    area_columns = [col for col in df_formatted.columns if 'area' in col.lower() and 'sqm' in col.lower()]
+    for col in area_columns:
+        if df_formatted[col].dtype in ['int64', 'float64']:
+            df_formatted[col] = df_formatted[col].apply(lambda x: f"{x:.1f} sqm" if pd.notna(x) else "")
+    
+    # Display the formatted table
+    st.dataframe(
+        df_formatted,
+        use_container_width=True,
+        hide_index=True,
+        height=400 if len(df_to_show) > 10 else None
+    )
+    
+    # Additional export options
+    with st.expander("📊 Additional Export Options"):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # CSV export
+            csv_data = df[selected_columns].to_csv(index=False)
+            st.download_button(
+                label="📄 Export to CSV",
+                data=csv_data,
+                file_name=f"HDB_Properties_Filtered_{current_time}.csv",
+                mime="text/csv"
+            )
+        
+        with col2:
+            # JSON export
+            json_data = df[selected_columns].to_json(orient='records', indent=2)
+            st.download_button(
+                label="📋 Export to JSON",
+                data=json_data,
+                file_name=f"HDB_Properties_Filtered_{current_time}.json",
+                mime="application/json"
+            )
 
 def main():
     # Header
@@ -150,6 +306,10 @@ def main():
     
     with tab5:
         show_price_analysis(df)
+    
+    # Add filtered results table at the bottom
+    st.markdown("---")
+    show_filtered_results(df)
 
 def show_overview(df):
     """Display overview of the housing data"""
@@ -333,10 +493,11 @@ def show_amenities_analysis(df):
     if amenity_cols:
         selected_amenity = st.selectbox("Select Amenity Type", amenity_cols)
         
-        if 'resale_price' in df.columns and selected_amenity in df.columns:
+        if 'resale_price' in df.columns and selected_amenity and selected_amenity in df.columns:
+            amenity_title = selected_amenity.replace('_', ' ').title() if selected_amenity else "Selected Amenity"
             fig = px.scatter(df.sample(min(1000, len(df))), 
                             x=selected_amenity, y='resale_price',
-                            title=f"Price vs {selected_amenity.replace('_', ' ').title()}",
+                            title=f"Price vs {amenity_title}",
                             labels={selected_amenity: 'Number of Amenities', 
                                    'resale_price': 'Resale Price (SGD)'})
             st.plotly_chart(fig, use_container_width=True)
